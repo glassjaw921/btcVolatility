@@ -100,9 +100,9 @@ class changes:
         wCount = 0
         firstHalf = []
         lastHalf = []
+        weeklyChanges = changes.deviationChanges()
 
-        testchanges = changes.deviationChanges()
-        for j in testchanges:
+        for j in weeklyChanges:
             if wCount > 0 and wCount <= 105:
                 firstHalf.append(j)
             elif wCount > 105:
@@ -216,7 +216,7 @@ print("\nFirst Monthly Deviation X Bar : ", changes.monthlyDeviationXBars()[0])
 print("Last Monthly Deviation X Bar : ", changes.monthlyDeviationXBars()[1])
 print("First Monthly Mean X Bar : ", changes.monthlyMeanXBars()[0])
 print("Last Monthly Mean X Bar : ", changes.monthlyMeanXBars()[1])
-print("\n*** MEAN FROM WEEKLY DEVIATION PERCENTAGE CHANGES!!! ***")
+print("\n*** XBAR FROM WEEKLY DEVIATION PERCENTAGE CHANGES!!! ***")
 print("First Half : ", weeklyXBar[0], "\nLast Half : ", weeklyXBar[1])
 
 #plot charts, color, legend names, grid, clear xaxis
@@ -248,5 +248,3 @@ ax5.legend(loc='upper right', frameon=True)
 
 #display charts
 plt.show()
-
-
