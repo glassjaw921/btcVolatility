@@ -27,10 +27,9 @@ months = 0
 days = 0
 year = 0
 i = []
-n = 364
+y = 364
 m = 29
 w = 6
-w2 = 4
 
 # plot prep
 fig = plt.figure()
@@ -40,8 +39,7 @@ ax2 = plt.subplot2grid((10,2), (7,0) , rowspan=3, colspan=1)
 ax4 = plt.subplot2grid((10,2), (4,1) , rowspan=3, colspan=1)
 ax5 = plt.subplot2grid((10,2), (7,1) , rowspan=3, colspan=1)
 
-# changes class prepares % changes for weekly mean and deviation, monthly mean and deviation and First/Last 
-monthly Mean/Deviation XBAR
+# changes class prepares % changes for weekly mean and deviation, monthly mean and deviation and First/Last monthly Mean/Deviation XBAR
 class changes:
 
     def meanChanges():
@@ -69,16 +67,16 @@ class changes:
         return i
 
     def monthlyDeviationXBars():
-        meanCount = 0
+        devCount = 0
         firstHalf = []
         lastHalf = []
         for data in monthlyDeviations:
 
-            if meanCount <= 24:
+            if devCount <= 24:
                 firstHalf.append(data)
             else:
                 lastHalf.append(data)
-            meanCount += 1
+            devCount += 1
         firstXBar = statistics.mean(firstHalf)
         lastXBar = statistics.mean(lastHalf)
         return firstXBar, lastXBar
@@ -98,18 +96,37 @@ class changes:
         lastXBar = statistics.mean(lastHalf)
         return firstXBar, lastXBar
 
+    def weeklyXbar():
+        wCount = 0
+        firstHalf = []
+        lastHalf = []
+
+        testchanges = changes.deviationChanges()
+        for j in testchanges:
+            if wCount > 0 and wCount <= 105:
+                firstHalf.append(j)
+            elif wCount > 105:
+                lastHalf.append(j)
+            wCount += 1
+
+        firstHalfMean = statistics.mean(firstHalf)
+        lastHalfMean = statistics.mean(lastHalf)
+        return firstHalfMean, lastHalfMean
 
 # single for loop to process all data
 for dat in data['values']:
     #begin day
+    times.append(dat['x']), allTimes.append(dat['x'])
+    sample.append(dat['y']), allSamples.append(dat['y'])
+    monthVars.append(dat['y'])
     print("day number : ", days, " Date ", time.ctime(dat['x']))
 
-    if days == n:
+    if days == y:
         # year counter
         print("\nYear Number : ", year)
-        n += 365
+        y += 365
         year += 1
-    allTimes.append(dat['x']), allSamples.append(dat['y'])
+    # weekly checks
     if days == w:
         w += 7
         print("\nWeek # ", weeks, " of", time.ctime(dat['x']))
@@ -135,67 +152,63 @@ for dat in data['values']:
         #display weekly data
         print("\n7 day mean", mean)
         print("7 day stddev", deviation)
-        print("\nWeekly Precentage change per day : \n", priceChanges.pct_change())
-        # reset sample, times and count
-        sample = []
-        times = []
-
-        # increment for new week
-        weeks += 1
+        print("\nWeekly Percentage change per day : \n", priceChanges.pct_change())
         # monthly checks
-        monthVars.append(dat['y'])
         if days == m:
             m += 30
-            monthlySamples.append(dat['y'])
+            monthlySamples.append(dat['y']), monthlyTimes.append(dat['x'])
             monthlyDeviations.append(statistics.stdev(monthVars))
             monthlyMeans.append(statistics.mean(monthVars))
-            monthlyTimes.append(dat['x'])
             print("Month number  : ", months)
             print("Monthly Mean : ", monthlyMeans[months])
             print("Monthly Deviation", monthlyDeviations[months])
+            # increment new month
             months += 1
             monthVars = []
             print("\nBegin New Month number", months)
+
+        # increment for new week
+        weeks += 1
+        # reset sample, times AND START NEW WEEK
+        sample = []
+        times = []
         print("\nBegin New Week number :", weeks)
     else:
         # continue on same week
-        times.append(dat['x']), allTimes.append(dat['x'])
-        sample.append(dat['y']), allSamples.append(dat['y'])
-
         # monthly checks
-        monthVars.append(dat['y'])
         if days == m:
             m += 30
-            monthlySamples.append(dat['y'])
+            monthlySamples.append(dat['y']), monthlyTimes.append(dat['x'])
             monthlyDeviations.append(statistics.stdev(monthVars))
             monthlyMeans.append(statistics.mean(monthVars))
-            monthlyTimes.append(dat['x'])
-            monthVars = []
             print("Month number : ", months)
             print("Monthly Mean : ", monthlyMeans[months])
             print("Monthly Deviation", monthlyDeviations[months])
             months += 1
+            monthVars = []
             print("\nBegin New Month number :", months)
     days +=1
 
-
-# gather final weekly change %s
+# gather final change %s
 deviationChanges = pd.Series(weeklyDeviations)
 meanChanges = pd.Series(weeklyMeans)
 mDeviationChanges = pd.Series(monthlyDeviations)
 mMeanChanges = pd.Series(monthlyMeans)
+
+#final output for project comparison
+weeklyXBar = changes.weeklyXbar()
 
 # Display processed Data
 # output final data
 print("\nWeekly Deviation % Changes \n", deviationChanges.pct_change())
 print("\nWeekly Mean % Changes \n", meanChanges.pct_change())
 print("\n Monthly Deviation % Changes \n", mDeviationChanges.pct_change())
-print("\n Monthly Mean % Changes \n", mMeanChanges.pct_change())
+print("\n Monthly Mean % Changes \n", mMeanChanges.pct_change(), "\n")
 
-print("\n****** These numbers are Total numbers for actual price data   \t ******")
+print("****** These numbers are Total numbers for actual price data   \t ******")
 print("****** Public API provides actual price data for every other day  ******")
-print("****** There are half as many price points as length of time span ******")
-print("\nTotal number of Days", days)
+print("****** There are half as many price points as length of time span ******\n")
+print("Total number of Days", days)
 print("Total number of Weeks", weeks)
 print("Total number of Months", months)
 print("Total number of Years", year)
@@ -203,7 +216,8 @@ print("\nFirst Monthly Deviation X Bar : ", changes.monthlyDeviationXBars()[0])
 print("Last Monthly Deviation X Bar : ", changes.monthlyDeviationXBars()[1])
 print("First Monthly Mean X Bar : ", changes.monthlyMeanXBars()[0])
 print("Last Monthly Mean X Bar : ", changes.monthlyMeanXBars()[1])
-
+print("\n*** MEAN FROM WEEKLY DEVIATION PERCENTAGE CHANGES!!! ***")
+print("First Half : ", weeklyXBar[0], "\nLast Half : ", weeklyXBar[1])
 
 #plot charts, color, legend names, grid, clear xaxis
 
@@ -234,6 +248,5 @@ ax5.legend(loc='upper right', frameon=True)
 
 #display charts
 plt.show()
-
 
 
