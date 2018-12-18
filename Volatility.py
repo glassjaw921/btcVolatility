@@ -2,9 +2,25 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import statistics
 import time
+import requests
+import json
+from scipy.stats import norm
+import numpy as np
+
+
+# to get new data
+#url = "https://blockchain.info/charts/market-price?timespan=2961days&format=json"
+
+#req = requests.get(url)
+
+#print(req.json())
+
+#f = open('C:/Users/bunchies/Desktop/btcdata/btcdataNew.json', 'w')
+#f.write(str(req.json()))
+
 
 # open data file
-data = eval(open('C:/Users/bunchies/Desktop/btcdata/btcdata.json', 'r').read())
+data = eval(open('C:/Users/bunchies/Desktop/btcdata/btcdataNew.json', 'r').read())
 
 # init
 allSamples = []
@@ -41,19 +57,16 @@ ax5 = plt.subplot2grid((10,2), (7,1) , rowspan=3, colspan=1)
 
 # changes class prepares % changes for weekly mean and deviation, monthly mean and deviation and First/Last monthly Mean/Deviation XBAR
 class changes:
-
     def meanChanges():
         i = []
         for j in meanChanges.pct_change():
             i.append(j)
         return i
-
     def deviationChanges():
         i = []
         for j in deviationChanges.pct_change():
             i.append(j)
         return i
-
     def mDeviationChanges():
         i = []
         for j in mDeviationChanges.pct_change():
@@ -65,6 +78,32 @@ class changes:
         for j in mMeanChanges.pct_change():
             i.append(j)
         return i
+    def weeklyXbar():
+        wCount = 0
+        firstHalf = []
+        lastHalf = []
+        weeklyChanges = changes.deviationChanges()
+
+        for j in weeklyChanges:
+            if wCount > 0 and wCount < 105:
+                firstHalf.append(j)
+                print("first half : ", wCount)
+
+            elif wCount == 105:
+                print("COUNT IS 105 - SKIPPING WEEK")
+            elif wCount > 105:
+                lastHalf.append(j)
+                print("last half : ", wCount)
+
+
+            wCount += 1
+
+        print("COUNT WEEKLY XBAR = ", wCount)
+        firstHalfMean = statistics.mean(firstHalf)
+        firstHalfDeviation = statistics.stdev(firstHalf)
+        lastHalfMean = statistics.mean(lastHalf)
+        lastHalfDeviation = statistics.stdev(lastHalf)
+        return firstHalfMean, lastHalfMean, firstHalfDeviation, lastHalfDeviation
 
     def monthlyDeviationXBars():
         devCount = 0
@@ -78,7 +117,9 @@ class changes:
                 lastHalf.append(data)
             devCount += 1
         firstXBar = statistics.mean(firstHalf)
+
         lastXBar = statistics.mean(lastHalf)
+
         return firstXBar, lastXBar
 
     def monthlyMeanXBars():
@@ -95,23 +136,6 @@ class changes:
         firstXBar = statistics.mean(firstHalf)
         lastXBar = statistics.mean(lastHalf)
         return firstXBar, lastXBar
-
-    def weeklyXbar():
-        wCount = 0
-        firstHalf = []
-        lastHalf = []
-        weeklyChanges = changes.deviationChanges()
-
-        for j in weeklyChanges:
-            if wCount > 0 and wCount <= 105:
-                firstHalf.append(j)
-            elif wCount > 105:
-                lastHalf.append(j)
-            wCount += 1
-
-        firstHalfMean = statistics.mean(firstHalf)
-        lastHalfMean = statistics.mean(lastHalf)
-        return firstHalfMean, lastHalfMean
 
 # single for loop to process all data
 for dat in data['values']:
@@ -136,19 +160,14 @@ for dat in data['values']:
         # get stats from current weeks data
         deviation = statistics.stdev(sample)
         mean = statistics.mean(sample)
-
         # get percentage changes from daily price action
         priceChanges = pd.Series(sample)
-
         #add deviations for the week to list
         weeklyDeviations.append(deviation)
-
         # add current weeks means for the weekly plots
         weeklyMeans.append(mean)
-
         #add current days epoch for weekly plots
         weeklyTimes.append(dat['x'])
-
         #display weekly data
         print("\n7 day mean", mean)
         print("7 day stddev", deviation)
@@ -205,20 +224,22 @@ print("\nWeekly Mean % Changes \n", meanChanges.pct_change())
 print("\n Monthly Deviation % Changes \n", mDeviationChanges.pct_change())
 print("\n Monthly Mean % Changes \n", mMeanChanges.pct_change(), "\n")
 
-print("****** These numbers are Total numbers for actual price data   \t ******")
+print("****** These numbers are Total numbers for actual price data   \t  ******")
 print("****** Public API provides actual price data for every other day  ******")
 print("****** There are half as many price points as length of time span ******\n")
+
 print("Total number of Days", days)
 print("Total number of Weeks", weeks)
 print("Total number of Months", months)
 print("Total number of Years", year)
+
 print("\nFirst Monthly Deviation X Bar : ", changes.monthlyDeviationXBars()[0])
 print("Last Monthly Deviation X Bar : ", changes.monthlyDeviationXBars()[1])
-print("First Monthly Mean X Bar : ", changes.monthlyMeanXBars()[0])
-print("Last Monthly Mean X Bar : ", changes.monthlyMeanXBars()[1])
-print("\n*** XBAR FROM WEEKLY DEVIATION PERCENTAGE CHANGES!!! ***")
-print("First Half : ", weeklyXBar[0], "\nLast Half : ", weeklyXBar[1])
 
+print("\n*** XBAR FROM WEEKLY DEVIATION PERCENTAGE CHANGES!!! ***\n")
+
+print("First Half : ", weeklyXBar[0], "\nLast Half : ", weeklyXBar[1])
+print("First Half Deviation : ", weeklyXBar[2], "\nLast Half Deviation : ", weeklyXBar[3])
 #plot charts, color, legend names, grid, clear xaxis
 
 ax1.grid(),ax2.grid(),ax3.grid(), ax4.grid(), ax5.grid()
@@ -234,11 +255,12 @@ ax4.xaxis.set_major_formatter(plt.NullFormatter())
 #chart labels
 ax1.set_ylabel("Price in $USD")
 ax2.set_xlabel("Epoch Time (UTC)")
-ax5.set_xlabel("[Sept 2010 - Oct 2018]")
+ax5.set_xlabel("[Sept 2010 - Nov 2018]")
 ax2.set_ylabel("% Change")
 ax3.set_ylabel("% Change")
 ax4.set_ylabel("% Change")
 ax5.set_ylabel("% Change")
+
 #legend positions, frame
 ax1.legend(loc='upper left', frameon=True)
 ax2.legend(loc='upper right', frameon=True)
@@ -248,3 +270,19 @@ ax5.legend(loc='upper right', frameon=True)
 
 #display charts
 plt.show()
+
+# Plot between -10 and 10 with .1 steps.
+x_axis = np.arange(-10, 10, 0.1)
+# Mean = weeklyXBar[0,1], SD = weeklyXBar[2,3]
+plt.draw()
+plt.plot(x_axis, norm.pdf(x_axis,weeklyXBar[0],weeklyXBar[2]), color='blue', label='First Half')
+plt.plot(x_axis, norm.pdf(x_axis,weeklyXBar[1],weeklyXBar[3]), color='red', label='Last Half')
+plt.legend(loc='upper left')
+plt.show()
+
+
+
+
+
+
+
